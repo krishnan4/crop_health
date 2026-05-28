@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ profile_user.name }} — CropHealth AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --forest:#1a3a2a; --pine:#2d5a40; --sage:#4a8c62; --moss:#6db885;
+      --mist:#c8e6d4; --cream:#f7f5f0; --paper:#fffffe;
+      --ink:#1c1c1c; --ink-2:#3d3d3d; --ink-3:#6b6b6b;
+      --line:#e5e2da; --line-2:#f0ede6;
+      --warn:#c0392b; --warn-bg:#fdf0ef;
+      --success:#1e7a4d; --success-bg:#edf7f2;
+      --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:24px;
+      --transition:200ms cubic-bezier(0.4,0,0.2,1);
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased}
+
+    /* NAV */
+    .nav{background:var(--forest);padding:0 2.5rem;display:flex;justify-content:space-between;align-items:center;height:60px;position:sticky;top:0;z-index:200}
+    .nav-brand{font-family:'Playfair Display',serif;font-size:1.2rem;color:#fff;text-decoration:none;display:flex;align-items:center;gap:8px}
+    .nav-brand-dot{width:8px;height:8px;background:var(--moss);border-radius:50%}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-link{color:rgba(255,255,255,0.7);text-decoration:none;padding:6px 14px;border-radius:var(--radius-sm);font-size:0.875rem;font-weight:500;transition:all var(--transition)}
+    .nav-link:hover{color:#fff;background:rgba(255,255,255,0.1)}
+    .nav-link.cta{background:var(--sage);color:#fff}
+    .nav-link.cta:hover{background:var(--moss)}
+
+    /* Notification bell */
+    .notif-wrap{position:relative;display:inline-flex}
+    .nav-icon-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.75);font-size:1.15rem;padding:7px 9px;border-radius:6px;transition:all var(--transition);display:flex;align-items:center;position:relative}
+    .nav-icon-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+    .notif-badge{position:absolute;top:4px;right:4px;min-width:17px;height:17px;background:#e53935;color:#fff;border-radius:20px;font-size:0.65rem;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--forest)}
+    .notif-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:0 8px 30px rgba(0,0,0,0.15);z-index:500;display:none;overflow:hidden}
+    .notif-dropdown.open{display:block}
+    .notif-header{padding:0.875rem 1rem;border-bottom:1px solid var(--line-2);font-weight:700;font-size:0.875rem;color:var(--forest);display:flex;justify-content:space-between;align-items:center}
+    .notif-mark-btn{font-size:0.75rem;color:var(--sage);background:none;border:none;cursor:pointer;font-weight:600}
+    .notif-list{max-height:320px;overflow-y:auto}
+    .notif-item{display:flex;gap:10px;padding:0.75rem 1rem;border-bottom:1px solid var(--line-2);transition:background var(--transition);cursor:pointer}
+    .notif-item:hover{background:var(--cream)}
+    .notif-item.unread{background:#f0f7f2}
+    .notif-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--pine),var(--sage));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0}
+    .notif-text{flex:1;font-size:0.825rem;color:var(--ink-2);line-height:1.5}
+    .notif-time{font-size:0.7rem;color:var(--ink-3);margin-top:2px}
+    .notif-empty{padding:2rem;text-align:center;color:var(--ink-3);font-size:0.875rem}
+
+    .container{max-width:860px;margin:0 auto;padding:2.5rem 1.5rem}
+
+    /* PROFILE CARD */
+    .profile-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-xl);overflow:hidden;margin-bottom:1.5rem}
+    .profile-banner{height:150px;background:linear-gradient(135deg,var(--forest) 0%,var(--pine) 50%,var(--sage) 100%);position:relative}
+    .profile-banner::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(109,184,133,0.18) 0%,transparent 70%)}
+    .profile-body{padding:0 2rem 2rem}
+    .profile-top-row{margin-top:-52px;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:flex-end}
+
+    /* AVATAR */
+    .avatar-wrap{position:relative;width:96px;height:96px;flex-shrink:0}
+    .profile-avatar{width:96px;height:96px;border-radius:50%;border:4px solid var(--paper);display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--pine),var(--sage));overflow:hidden}
+    .avatar-img{width:100%;height:100%;object-fit:cover}
+    .avatar-edit-btn{position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:var(--pine);color:#fff;border:2px solid var(--paper);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.7rem;transition:all var(--transition)}
+    .avatar-edit-btn:hover{background:var(--sage)}
+
+    /* ACTION BUTTONS */
+    .profile-actions{display:flex;gap:8px;padding-bottom:6px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:0.875rem;font-weight:600;border:none;cursor:pointer;text-decoration:none;transition:all var(--transition)}
+    .btn-primary{background:var(--pine);color:#fff}
+    .btn-primary:hover{background:var(--forest)}
+    .btn-ghost{background:transparent;color:var(--ink-2);border:1.5px solid var(--line)}
+    .btn-ghost:hover{background:var(--cream)}
+    .btn-follow{background:var(--pine);color:#fff}
+    .btn-follow.following{background:transparent;color:var(--ink-2);border:1.5px solid var(--line)}
+    .btn-follow.pending{background:#fff8e1;color:#b45309;border:1.5px solid #f5d87e}
+    .btn-sm{padding:6px 13px;font-size:0.8rem}
+    .btn-danger{background:var(--warn-bg);color:var(--warn);border:1.5px solid #f5c1bc}
+    .btn-danger:hover{background:var(--warn);color:#fff}
+
+    .profile-name{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--forest);margin-bottom:2px;letter-spacing:-0.01em}
+    .follows-you-tag{display:inline-block;background:var(--cream);border:1px solid var(--line);color:var(--ink-3);font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+    .profile-bio{font-size:0.9rem;color:var(--ink-2);line-height:1.65;margin:0.5rem 0 0.75rem;max-width:560px}
+    .profile-bio-empty{font-size:0.875rem;color:var(--ink-3);font-style:italic;margin:0.5rem 0 0.75rem}
+    .profile-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:0.8rem;color:var(--ink-3);margin-bottom:0.25rem}
+
+    /* STATS ROW — now clickable */
+    .profile-stats{display:flex;gap:2rem;padding:1rem 0;border-top:1px solid var(--line-2);margin-top:1rem}
+    .stat-block{cursor:default}
+    .stat-block.clickable{cursor:pointer;padding:6px 10px;border-radius:var(--radius-md);transition:background var(--transition);margin:-6px -10px}
+    .stat-block.clickable:hover{background:var(--cream)}
+    .stat-num{font-size:1.35rem;font-weight:700;color:var(--forest);line-height:1}
+    .stat-label{font-size:0.75rem;color:var(--ink-3);margin-top:3px}
+
+    /* FOLLOW REQUESTS BANNER */
+    .requests-banner{background:#fff8e1;border:1px solid #f5d87e;border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1.5rem}
+    .requests-banner-title{font-weight:700;font-size:0.9rem;color:#7a5a10;margin-bottom:0.75rem;display:flex;align-items:center;gap:8px}
+    .request-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5d87e}
+    .request-row:last-child{border-bottom:none}
+    .request-avatar{width:36px;height:36px;border-radius:50%;background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0}
+    .request-name{flex:1;font-weight:600;font-size:0.875rem;color:var(--ink)}
+    .request-actions{display:flex;gap:6px}
+
+    /* ── FOLLOWERS / FOLLOWING MODAL ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:600;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--paper);border-radius:var(--radius-xl);max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;animation:modalIn 0.2s ease;overflow:hidden}
+    @keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:none}}
+    .modal-header-bar{padding:1.1rem 1.5rem;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .modal-header-title{font-weight:700;font-size:1rem;color:var(--forest)}
+    .modal-close-btn{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--ink-3);padding:4px 8px;border-radius:var(--radius-sm);transition:all var(--transition)}
+    .modal-close-btn:hover{background:var(--cream);color:var(--ink)}
+    .modal-body{overflow-y:auto;flex:1;padding:0.5rem 0}
+    .user-list-item{display:flex;align-items:center;gap:12px;padding:10px 1.25rem;transition:background var(--transition)}
+    .user-list-item:hover{background:var(--cream)}
+    .ul-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--pine),var(--sage));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.95rem;font-weight:700;flex-shrink:0;text-decoration:none}
+    .ul-info{flex:1;min-width:0}
+    .ul-name{font-weight:600;font-size:0.9rem;color:var(--forest);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block}
+    .ul-name:hover{text-decoration:underline}
+    .ul-sub{font-size:0.775rem;color:var(--ink-3);margin-top:1px}
+    .ul-follow-btn{padding:6px 14px;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:600;border:none;cursor:pointer;transition:all var(--transition);flex-shrink:0}
+    .ul-follow-btn.follow{background:var(--pine);color:#fff}
+    .ul-follow-btn.follow:hover{background:var(--forest)}
+    .ul-follow-btn.following{background:transparent;color:var(--ink-3);border:1.5px solid var(--line)}
+    .ul-follow-btn.you{background:var(--cream);color:var(--ink-3);border:1.5px solid var(--line);cursor:default}
+    .modal-loading{padding:3rem;text-align:center;color:var(--ink-3);font-size:0.875rem}
+    .modal-empty{padding:3rem;text-align:center;color:var(--ink-3);font-size:0.875rem}
+    .modal-empty .icon{font-size:2rem;margin-bottom:0.5rem}
+
+    /* EDIT MODAL */
+    .edit-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:500;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+    .edit-modal-overlay.open{display:flex}
+    .edit-modal{background:var(--paper);border-radius:var(--radius-xl);max-width:500px;width:100%;padding:2rem;animation:modalIn 0.2s ease}
+    .modal-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--forest);margin-bottom:1.5rem}
+    .form-group{margin-bottom:1.25rem}
+    .label{display:block;font-size:0.78rem;font-weight:700;color:var(--ink-2);margin-bottom:6px;letter-spacing:0.03em;text-transform:uppercase}
+    .input,.textarea{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--ink);background:var(--paper);outline:none;transition:border-color var(--transition)}
+    .input:focus,.textarea:focus{border-color:var(--sage)}
+    .textarea{min-height:90px;resize:vertical}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line-2)}
+    .avatar-preview-wrap{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem}
+    .avatar-preview{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--pine),var(--sage));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;overflow:hidden;flex-shrink:0;border:3px solid var(--line)}
+    .avatar-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .file-label{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px dashed var(--line);border-radius:var(--radius-md);color:var(--ink-3);font-size:0.825rem;cursor:pointer;transition:all var(--transition)}
+    .file-label:hover{border-color:var(--sage);color:var(--sage)}
+
+    /* CONTENT SECTIONS */
+    .section-title{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-3);margin-bottom:1rem}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    .content-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.5rem}
+    .scan-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+    .scan-item:last-child{border-bottom:none}
+    .scan-thumb{width:52px;height:52px;object-fit:cover;border-radius:var(--radius-md);flex-shrink:0;background:var(--cream)}
+    .scan-info{flex:1;min-width:0}
+    .scan-name{font-weight:600;font-size:0.875rem;color:var(--forest);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .scan-date{font-size:0.775rem;color:var(--ink-3);margin-top:2px}
+    .badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:600;flex-shrink:0}
+    .badge-green{background:var(--success-bg);color:var(--success)}
+    .badge-red{background:var(--warn-bg);color:var(--warn)}
+    .post-item{padding:10px 0;border-bottom:1px solid var(--line-2)}
+    .post-item:last-child{border-bottom:none}
+    .post-item-title{font-weight:600;font-size:0.875rem;color:var(--forest);margin-bottom:3px}
+    .post-item-meta{font-size:0.775rem;color:var(--ink-3);display:flex;gap:12px}
+    .empty{padding:2rem;text-align:center;color:var(--ink-3);font-size:0.875rem}
+    .empty .icon{font-size:1.75rem;margin-bottom:0.5rem}
+    .private-note{background:var(--cream);border:1px dashed var(--line);border-radius:var(--radius-lg);padding:2rem;text-align:center;color:var(--ink-3);font-size:0.875rem}
+    .private-note .icon{font-size:2rem;margin-bottom:0.75rem}
+    .private-note strong{display:block;color:var(--forest);margin-bottom:0.35rem;font-size:1rem}
+
+    @media(max-width:640px){
+      .grid-2{grid-template-columns:1fr}
+      .profile-stats{gap:1.25rem}
+      .profile-top-row{flex-direction:column;align-items:flex-start;gap:1rem}
+    }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="nav-brand"><span class="nav-brand-dot"></span>CropHealth AI</a>
+  <div class="nav-links">
+    {% if user %}
+      <a href="/dashboard" class="nav-link">Dashboard</a>
+      <a href="/feed" class="nav-link">Community</a>
+
+      <!-- Notification Bell -->
+      <div class="notif-wrap">
+        <button class="nav-icon-btn" id="notif-bell" onclick="toggleNotifDropdown()" title="Notifications">
+          🔔
+          <span class="notif-badge" id="notif-badge"></span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            Notifications
+            <button class="notif-mark-btn" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div class="notif-list" id="notif-list">
+            <div class="notif-empty">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <a href="/upload" class="nav-link cta">📷 Scan</a>
+      <a href="/logout" class="nav-link">Log out</a>
+    {% else %}
+      <a href="/login" class="nav-link cta">Sign In</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ── FOLLOW REQUESTS (owner only) ── -->
+  {% if is_owner and follow_requests %}
+  <div class="requests-banner">
+    <div class="requests-banner-title">🔔 Follow Requests ({{ follow_requests|length }})</div>
+    {% for req in follow_requests %}
+    <div class="request-row">
+      <div class="request-avatar">{{ req.name[0].upper() }}</div>
+      <div class="request-name">{{ req.name }}</div>
+      <div class="request-actions">
+        <form action="/follow/accept/{{ req.follower_id }}" method="POST" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-primary">✓ Accept</button>
+        </form>
+        <form action="/follow/decline/{{ req.follower_id }}" method="POST" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-danger">✕ Decline</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── PROFILE CARD ── -->
+  <div class="profile-card">
+    <div class="profile-banner"></div>
+    <div class="profile-body">
+      <div class="profile-top-row">
+        <!-- Avatar -->
+        <div class="avatar-wrap">
+          <div class="profile-avatar">
+            {% if profile_user.avatar_path %}
+              <img class="avatar-img" src="/{{ profile_user.avatar_path }}" alt="{{ profile_user.name }}">
+            {% else %}
+              {{ profile_user.name[0].upper() }}
+            {% endif %}
+          </div>
+          {% if is_owner %}
+          <div class="avatar-edit-btn" onclick="openEditModal()" title="Change photo">✏️</div>
+          {% endif %}
+        </div>
+
+        <!-- Action buttons -->
+        <div class="profile-actions">
+          {% if is_owner %}
+            <button class="btn btn-ghost" onclick="openEditModal()">✏️ Edit Profile</button>
+            <a href="/dashboard" class="btn btn-ghost">📋 Dashboard</a>
+          {% elif user %}
+            {% if follow_status == 'accepted' %}
+              <button class="btn btn-follow following" id="follow-btn" onclick="unfollowUser({{ profile_user.id }})">✓ Following</button>
+            {% elif follow_status == 'pending' %}
+              <button class="btn btn-follow pending" id="follow-btn" onclick="unfollowUser({{ profile_user.id }})">⏳ Requested</button>
+            {% else %}
+              <button class="btn btn-follow" id="follow-btn" onclick="followUser({{ profile_user.id }})">
+                {% if follows_you %}➕ Follow Back{% else %}➕ Follow{% endif %}
+              </button>
+            {% endif %}
+            <a href="/messages?to={{ profile_user.id }}" class="btn btn-ghost">✉️ Message</a>
+          {% else %}
+            <a href="/login" class="btn btn-primary">Sign in to follow</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Name & bio -->
+      <div class="profile-name">
+        {{ profile_user.name }}
+        {% if follows_you %}<span class="follows-you-tag">Follows you</span>{% endif %}
+      </div>
+
+      {% if profile_user.bio %}
+        <p class="profile-bio">{{ profile_user.bio }}</p>
+      {% elif is_owner %}
+        <p class="profile-bio-empty">No bio yet — <span style="color:var(--sage);cursor:pointer" onclick="openEditModal()">add one</span></p>
+      {% endif %}
+
+      <div class="profile-meta">
+        <span>📅 Joined {{ profile_user.created_at[:10] if profile_user.created_at else 'recently' }}</span>
+        <span>🌱 CropHealth AI Member</span>
+      </div>
+
+      <!-- ── STATS — clickable for followers/following ── -->
+      <div class="profile-stats">
+        <div class="stat-block">
+          <div class="stat-num">{{ posts|length }}</div>
+          <div class="stat-label">Posts</div>
+        </div>
+
+        <!-- Followers — clickable -->
+        <div class="stat-block clickable" onclick="openFollowModal('followers', {{ profile_user.id }})" title="See followers">
+          <div class="stat-num" id="followers-count">{{ followers_count }}</div>
+          <div class="stat-label">Followers</div>
+        </div>
+
+        <!-- Following — clickable -->
+        <div class="stat-block clickable" onclick="openFollowModal('following', {{ profile_user.id }})" title="See following">
+          <div class="stat-num" id="following-count">{{ following_count }}</div>
+          <div class="stat-label">Following</div>
+        </div>
+
+        {% if is_owner %}
+        <div class="stat-block">
+          <div class="stat-num">{{ scans|length }}</div>
+          <div class="stat-label">Crop Scans</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-num">{{ diseases_found }}</div>
+          <div class="stat-label">Diseases Found</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTENT SECTIONS ── -->
+  {% if is_owner %}
+  <div class="grid-2">
+    <div class="content-card">
+      <div class="section-title">🔬 Recent Scans</div>
+      {% if scans %}
+        {% for scan in scans %}
+        <div class="scan-item">
+          <img class="scan-thumb" src="/{{ scan.image_path }}" alt="Scan" onerror="this.style.display='none'">
+          <div class="scan-info">
+            <div class="scan-name">{{ scan.disease_name }}</div>
+            <div class="scan-date">{{ scan.created_at[:10] if scan.created_at else '' }}</div>
+          </div>
+          <span class="badge {% if 'healthy' in scan.disease_name.lower() %}badge-green{% else %}badge-red{% endif %}">
+            {% if 'healthy' in scan.disease_name.lower() %}✓{% else %}⚠{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="icon">🌱</div>No scans yet</div>
+      {% endif %}
+    </div>
+    <div class="content-card">
+      <div class="section-title">📝 My Posts</div>
+      {% if posts %}
+        {% for post in posts %}
+        <div class="post-item">
+          <div class="post-item-title">{{ post.title }}</div>
+          <div class="post-item-meta">
+            <span>{{ post.created_at[:10] if post.created_at else '' }}</span>
+            <span>❤️ {{ post.likes }}</span>
+            {% if post.disease_tag %}<span>🦠 {{ post.disease_tag }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="icon">📝</div>No posts yet</div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="grid-2">
+    <div class="content-card">
+      <div class="section-title">📝 Community Posts</div>
+      {% if posts %}
+        {% for post in posts %}
+        <div class="post-item">
+          <div class="post-item-title">{{ post.title }}</div>
+          <div class="post-item-meta">
+            <span>{{ post.created_at[:10] if post.created_at else '' }}</span>
+            <span>❤️ {{ post.likes }}</span>
+            {% if post.disease_tag %}<span>🦠 {{ post.disease_tag }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="icon">📝</div>No posts yet</div>
+      {% endif %}
+    </div>
+    <div class="private-note">
+      <div class="icon">🔒</div>
+      <strong>Scan history is private</strong>
+      Only {{ profile_user.name.split()[0] }} can see their crop scan history.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── FOLLOWERS / FOLLOWING MODAL ── -->
+<div class="modal-overlay" id="follow-modal-overlay" onclick="closeFollowModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header-bar">
+      <div class="modal-header-title" id="follow-modal-title">Followers</div>
+      <button class="modal-close-btn" onclick="closeFollowModal()">✕</button>
+    </div>
+    <div class="modal-body" id="follow-modal-body">
+      <div class="modal-loading">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT PROFILE MODAL ── -->
+{% if is_owner %}
+<div class="edit-modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
+  <div class="edit-modal">
+    <div class="modal-title">✏️ Edit Profile</div>
+    <form action="/profile/edit" method="POST" enctype="multipart/form-data">
+      <div class="avatar-preview-wrap">
+        <div class="avatar-preview" id="avatar-preview">
+          {% if profile_user.avatar_path %}
+            <img src="/{{ profile_user.avatar_path }}" id="avatar-preview-img" alt="avatar">
+          {% else %}
+            <span id="avatar-initial">{{ profile_user.name[0].upper() }}</span>
+          {% endif %}
+        </div>
+        <div>
+          <label class="file-label" for="avatar-input">📷 Change photo</label>
+          <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+          <p style="font-size:0.775rem;color:var(--ink-3);margin-top:6px">JPG, PNG — max 5 MB</p>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label" for="edit-name">Full Name</label>
+        <input class="input" type="text" id="edit-name" name="name" value="{{ profile_user.name }}" required maxlength="80">
+      </div>
+      <div class="form-group">
+        <label class="label" for="edit-bio">Bio</label>
+        <textarea class="textarea" id="edit-bio" name="bio" maxlength="300" placeholder="Tell the community about yourself…">{{ profile_user.bio or '' }}</textarea>
+        <div style="font-size:0.75rem;color:var(--ink-3);margin-top:4px;text-align:right"><span id="bio-count">{{ (profile_user.bio or '')|length }}</span>/300</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  const CURRENT_USER_ID = {% if user %}{{ user.id }}{% else %}null{% endif %};
+
+  /* ── FOLLOWERS / FOLLOWING MODAL ── */
+  let followModalOpen = false;
+
+  async function openFollowModal(type, userId) {
+    document.getElementById('follow-modal-title').textContent =
+      type === 'followers' ? 'Followers' : 'Following';
+    document.getElementById('follow-modal-body').innerHTML =
+      '<div class="modal-loading">Loading...</div>';
+    document.getElementById('follow-modal-overlay').classList.add('open');
+    followModalOpen = true;
+
+    try {
+      const res = await fetch(`/api/${type}/${userId}`);
+      const users = await res.json();
+      renderFollowList(users, userId);
+    } catch(e) {
+      document.getElementById('follow-modal-body').innerHTML =
+        '<div class="modal-empty">Failed to load. Please try again.</div>';
+    }
+  }
+
+  function renderFollowList(users, profileUserId) {
+    const body = document.getElementById('follow-modal-body');
+    if (!users || users.length === 0) {
+      body.innerHTML = '<div class="modal-empty"><div class="icon">👤</div>Nobody here yet.</div>';
+      return;
+    }
+
+    body.innerHTML = users.map(u => {
+      const initial = u.name ? u.name[0].toUpperCase() : '?';
+      let btnHtml = '';
+      if (CURRENT_USER_ID) {
+        if (u.id === CURRENT_USER_ID) {
+          btnHtml = `<button class="ul-follow-btn you" disabled>You</button>`;
+        } else if (u.my_follow_status === 'accepted') {
+          btnHtml = `<button class="ul-follow-btn following" onclick="modalUnfollow(${u.id}, this)">Following</button>`;
+        } else {
+          btnHtml = `<button class="ul-follow-btn follow" onclick="modalFollow(${u.id}, this)">Follow</button>`;
+        }
+      }
+      return `
+        <div class="user-list-item">
+          <a href="/profile/${u.id}" class="ul-avatar">${initial}</a>
+          <div class="ul-info">
+            <a href="/profile/${u.id}" class="ul-name">${esc(u.name)}</a>
+            <div class="ul-sub">CropHealth member</div>
+          </div>
+          ${btnHtml}
+        </div>`;
+    }).join('');
+  }
+
+  async function modalFollow(userId, btn) {
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/follow/${userId}`, { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        btn.textContent = 'Following';
+        btn.className = 'ul-follow-btn following';
+        btn.onclick = () => modalUnfollow(userId, btn);
+      }
+    } catch(e) {}
+    btn.disabled = false;
+  }
+
+  async function modalUnfollow(userId, btn) {
+    if (!confirm('Unfollow this user?')) return;
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/unfollow/${userId}`, { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        btn.textContent = 'Follow';
+        btn.className = 'ul-follow-btn follow';
+        btn.onclick = () => modalFollow(userId, btn);
+      }
+    } catch(e) {}
+    btn.disabled = false;
+  }
+
+  function closeFollowModal() {
+    document.getElementById('follow-modal-overlay').classList.remove('open');
+    followModalOpen = false;
+  }
+
+  function closeFollowModalOutside(e) {
+    if (e.target === document.getElementById('follow-modal-overlay')) closeFollowModal();
+  }
+
+  /* ── EDIT MODAL ── */
+  function openEditModal() {
+    document.getElementById('edit-modal').classList.add('open');
+  }
+  function closeEditModal(e) {
+    if (!e || e.target === document.getElementById('edit-modal')) {
+      document.getElementById('edit-modal').classList.remove('open');
+    }
+  }
+
+  function previewAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('avatar-preview').innerHTML =
+        `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  const bioEl = document.getElementById('edit-bio');
+  const bioCount = document.getElementById('bio-count');
+  if (bioEl && bioCount) bioEl.addEventListener('input', () => { bioCount.textContent = bioEl.value.length; });
+
+  /* ── FOLLOW / UNFOLLOW from profile page ── */
+  async function followUser(userId) {
+    const btn = document.getElementById('follow-btn');
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/follow/${userId}`, { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        btn.textContent = d.status === 'pending' ? '⏳ Requested' : '✓ Following';
+        btn.className = 'btn btn-follow ' + (d.status === 'pending' ? 'pending' : 'following');
+        btn.onclick = () => unfollowUser(userId);
+        // Update count
+        const fc = document.getElementById('followers-count');
+        if (fc) fc.textContent = parseInt(fc.textContent) + 1;
+      }
+    } catch(e) {}
+    btn.disabled = false;
+  }
+
+  async function unfollowUser(userId) {
+    const btn = document.getElementById('follow-btn');
+    if (!confirm('Unfollow this user?')) return;
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/unfollow/${userId}`, { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        btn.textContent = '➕ Follow';
+        btn.className = 'btn btn-follow';
+        btn.onclick = () => followUser(userId);
+        const fc = document.getElementById('followers-count');
+        if (fc) fc.textContent = Math.max(0, parseInt(fc.textContent) - 1);
+      }
+    } catch(e) {}
+    btn.disabled = false;
+  }
+
+  /* ── NOTIFICATIONS ── */
+  let notifOpen = false;
+
+  async function loadNotifications() {
+    try {
+      const r = await fetch('/api/notifications');
+      const d = await r.json();
+      const badge = document.getElementById('notif-badge');
+      if (badge) {
+        if (d.unread > 0) {
+          badge.style.display = 'flex';
+          badge.textContent = d.unread > 9 ? '9+' : d.unread;
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      const list = document.getElementById('notif-list');
+      if (!list) return;
+      if (!d.notifications || d.notifications.length === 0) {
+        list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+        return;
+      }
+      list.innerHTML = d.notifications.map(n => {
+        const initial = n.sender_name ? n.sender_name[0].toUpperCase() : '?';
+        const time = n.created_at ? n.created_at.slice(5, 16) : '';
+        return `<div class="notif-item ${n.is_read ? '' : 'unread'}"
+            onclick="if(${n.related_user_id}) window.location='/profile/${n.related_user_id}'">
+          <div class="notif-avatar">${initial}</div>
+          <div>
+            <div class="notif-text">${esc(n.content)}</div>
+            <div class="notif-time">${time}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {}
+  }
+
+  function toggleNotifDropdown() {
+    const dd = document.getElementById('notif-dropdown');
+    notifOpen = !notifOpen;
+    dd.classList.toggle('open', notifOpen);
+    if (notifOpen) loadNotifications();
+  }
+
+  async function markAllRead() {
+    await fetch('/api/notifications/read', { method: 'POST' });
+    const badge = document.getElementById('notif-badge');
+    if (badge) badge.style.display = 'none';
+    loadNotifications();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeFollowModal(); closeEditModal(); }
+  });
+
+  document.addEventListener('click', e => {
+    const wrap = document.querySelector('.notif-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      const dd = document.getElementById('notif-dropdown');
+      if (dd) { dd.classList.remove('open'); notifOpen = false; }
+    }
+  });
+
+  loadNotifications();
+  setInterval(loadNotifications, 30000);
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

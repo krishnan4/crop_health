@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan Crop — CropHealth AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f7f0; }
+        nav { background: #2d6a4f; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; }
+        nav a { color: white; text-decoration: none; margin-left: 1rem; }
+        
+        .container { max-width: 600px; margin: 3rem auto; padding: 0 1rem; }
+        
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h2 { color: #2d6a4f; margin-bottom: 0.5rem; }
+        .subtitle { color: #888; margin-bottom: 2rem; }
+        
+        .upload-zone {
+            border: 2.5px dashed #52b788;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f9fff9;
+        }
+        .upload-zone:hover { border-color: #2d6a4f; background: #f0f7f0; }
+        .upload-zone .icon { font-size: 3rem; margin-bottom: 1rem; }
+        .upload-zone p { color: #888; font-size: 0.9rem; margin-top: 0.5rem; }
+        
+        #image-input { display: none; }
+        
+        #preview-container { display: none; margin-top: 1.5rem; text-align: center; }
+        #preview-img { max-width: 100%; max-height: 300px; border-radius: 12px; object-fit: cover; }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 1.5rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1b4332; }
+        .btn:disabled { background: #aaa; cursor: not-allowed; }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #2d6a4f;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #e8f5e9;
+            border-top: 4px solid #2d6a4f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .tips {
+            background: #e8f5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #2d6a4f;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <strong>🌱 CropHealth AI</strong>
+        <div>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="card">
+            <h2>📷 Scan Your Crop</h2>
+            <p class="subtitle">Upload a clear photo of the affected plant part</p>
+            
+            <form id="scan-form" action="/scan" method="POST" enctype="multipart/form-data">
+                <div class="upload-zone" onclick="document.getElementById('image-input').click()">
+                    <div class="icon">🌿</div>
+                    <strong>Click to select image</strong>
+                    <p>JPG, PNG, WEBP — Max 10MB</p>
+                </div>
+                
+                <input type="file" id="image-input" name="image" accept="image/*" required 
+                       onchange="previewImage(this)">
+                
+                <div id="preview-container">
+                    <img id="preview-img" src="" alt="Preview">
+                </div>
+                
+                <button type="submit" class="btn" id="scan-btn">🔬 Analyze Disease</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <strong>Analyzing your crop...</strong>
+                <p>AI model is detecting diseases. This may take 10-30 seconds.</p>
+            </div>
+            
+            <div class="tips">
+                📸 <strong>Tips for better results:</strong><br>
+                • Take photos in natural daylight<br>
+                • Focus on the affected leaf or stem<br>
+                • Avoid blurry or dark photos<br>
+                • Include both healthy and diseased parts
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        document.getElementById('scan-form').addEventListener('submit', function() {
+            document.getElementById('scan-btn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

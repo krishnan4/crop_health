@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CropHealth AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --forest:    #1a3a2a;
+      --pine:      #2d5a40;
+      --sage:      #4a8c62;
+      --moss:      #6db885;
+      --mist:      #c8e6d4;
+      --cream:     #f7f5f0;
+      --paper:     #fffffe;
+      --ink:       #1c1c1c;
+      --ink-2:     #3d3d3d;
+      --ink-3:     #6b6b6b;
+      --line:      #e5e2da;
+      --line-2:    #f0ede6;
+      --warn:      #c0392b;
+      --warn-bg:   #fdf0ef;
+      --success:   #1e7a4d;
+      --success-bg:#edf7f2;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --transition: 200ms cubic-bezier(0.4,0,0.2,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .left-panel {
+      width: 440px;
+      flex-shrink: 0;
+      background: var(--forest);
+      padding: 3.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(109,184,133,0.15) 0%, transparent 70%);
+    }
+    .left-inner { position: relative; z-index: 1; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4rem;
+    }
+    .brand-dot { width: 10px; height: 10px; background: var(--moss); border-radius: 50%; }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      color: #fff;
+    }
+    .left-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.25rem;
+      color: #fff;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+    }
+    .left-headline em { font-style: normal; color: var(--moss); }
+    .left-desc {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+    .left-stats { display: flex; flex-direction: column; gap: 1.25rem; }
+    .left-stat {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .left-stat-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .left-stat-text { font-size: 0.9rem; color: rgba(255,255,255,0.65); line-height: 1.4; }
+    .left-stat-text strong { color: #fff; display: block; margin-bottom: 2px; }
+    .left-footer { color: rgba(255,255,255,0.3); font-size: 0.8rem; }
+
+    .right-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .form-card {
+      width: 100%;
+      max-width: 420px;
+    }
+    .form-card-header { margin-bottom: 2rem; }
+    .form-card-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: var(--forest);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+    .form-card-header p { color: var(--ink-3); font-size: 0.9rem; }
+
+    .tabs {
+      display: flex;
+      background: var(--cream);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: 2rem;
+      border: 1px solid var(--line);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--ink-3);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: all var(--transition);
+    }
+    .tab-btn.active {
+      background: var(--paper);
+      color: var(--forest);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    .label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      margin-bottom: 7px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.925rem;
+      color: var(--ink);
+      background: var(--paper);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+    .input:focus {
+      border-color: var(--sage);
+      box-shadow: 0 0 0 3px rgba(74,140,98,0.1);
+    }
+    .input-otp {
+      letter-spacing: 10px;
+      font-size: 1.4rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background: var(--pine);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      margin-top: 0.5rem;
+    }
+    .btn-submit:hover { background: var(--forest); transform: translateY(-1px); }
+
+    .otp-box {
+      background: #fffbef;
+      border: 1px solid #f5d87e;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      color: #7a5a10;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .otp-box-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .otp-box strong { display: block; font-weight: 600; color: #5d420a; margin-bottom: 3px; }
+
+    .alert {
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .alert-success { background: var(--success-bg); border-color: #a7d7bb; color: var(--success); }
+    .alert-error { background: var(--warn-bg); border-color: #f5c1bc; color: var(--warn); }
+
+    @media (max-width: 768px) {
+      .left-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="left-panel">
+    <div class="left-inner">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">CropHealth AI</span>
+      </div>
+      <h2 class="left-headline">Protect your <em>harvest</em> with AI</h2>
+      <p class="left-desc">Get instant disease diagnoses and treatment plans. Trusted by farmers to detect problems before they damage yields.</p>
+      <div class="left-stats">
+        <div class="left-stat">
+          <div class="left-stat-icon">🔬</div>
+          <div class="left-stat-text">
+            <strong>38+ diseases detected</strong>
+            Deep learning model trained on real field data
+          </div>
+        </div>
+        <div class="left-stat">
+          <div class="left-stat-icon">💊</div>
+          <div class="left-stat-text">
+            <strong>Instant treatment plans</strong>
+            AI generates personalized recommendations
+          </div>
+        </div>
+        <div class="left-stat">
+          <div class="left-stat-icon">🌍</div>
+          <div class="left-stat-text">
+            <strong>Community knowledge</strong>
+            Share findings with farmers facing similar issues
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="left-footer">CropHealth AI — Final Year Project</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="form-card">
+      <div class="form-card-header">
+        <h2>Welcome back</h2>
+        <p>Sign in to your farm dashboard or create an account.</p>
+      </div>
+
+      {% if message %}
+      <div class="alert {% if '❌' in message or '⏱️' in message or 'Invalid' in message %}alert-error{% else %}alert-success{% endif %}">
+        {{ message }}
+      </div>
+      {% endif %}
+
+      <div class="tabs">
+        <button class="tab-btn" id="tab-login" onclick="showPanel('login-panel','tab-login')">Sign In</button>
+        <button class="tab-btn" id="tab-register" onclick="showPanel('register-panel','tab-register')">Create Account</button>
+      </div>
+
+      <div id="login-panel" class="panel">
+        <form action="/login" method="POST">
+          <div class="form-group">
+            <label class="label" for="email">Email address</label>
+            <input class="input" type="email" id="email" name="email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="label" for="password">Password</label>
+            <input class="input" type="password" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn-submit">Send OTP to My Email →</button>
+        </form>
+      </div>
+
+      <div id="otp-panel" class="panel">
+        <div class="otp-box">
+          <span class="otp-box-icon">📬</span>
+          <div>
+            <strong>Check your email</strong>
+            A 6-digit OTP was sent to <strong>{{ email }}</strong>. Check your spam folder if it doesn't appear.
+          </div>
+        </div>
+        <form action="/verify-otp" method="POST">
+          <input type="hidden" name="email" value="{{ email }}">
+          <div class="form-group">
+            <label class="label">Enter OTP code</label>
+            <input class="input input-otp" type="text" name="otp" placeholder="······" maxlength="6" required autocomplete="one-time-code">
+          </div>
+          <button type="submit" class="btn-submit">Verify &amp; Sign In →</button>
+        </form>
+      </div>
+
+      <div id="register-panel" class="panel">
+        <form action="/register" method="POST">
+          <div class="form-group">
+            <label class="label">Full name</label>
+            <input class="input" type="text" name="name" placeholder="Your name" required>
+          </div>
+          <div class="form-group">
+            <label class="label">Email address</label>
+            <input class="input" type="email" name="reg_email" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="label">Password</label>
+            <input class="input" type="password" name="reg_password" placeholder="Create a strong password" required>
+          </div>
+          <button type="submit" class="btn-submit">Create Account →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showPanel(panelId, tabId) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(panelId).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+    
+    var activeTab = "{{ tab }}";
+    if (activeTab === 'otp') showPanel('otp-panel', 'tab-login');
+    else if (activeTab === 'register') showPanel('register-panel', 'tab-register');
+    else showPanel('login-panel', 'tab-login');
+  </script>
+</body>
+</html>
