@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-python-multipart
-jinja2
-python-dotenv
-pillow
-torch
-timm
-bcrypt
