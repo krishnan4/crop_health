@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan Result — CropHealth AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f7f0; }
+        nav { background: #2d6a4f; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; }
+        nav a { color: white; text-decoration: none; margin-left: 1rem; }
+        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+
+        .result-header {
+            background: white; border-radius: 16px; padding: 2rem;
+            margin-bottom: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            display: flex; gap: 1.5rem; align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .result-header img {
+            width: 180px; height: 180px; object-fit: cover;
+            border-radius: 12px; flex-shrink: 0;
+        }
+        .disease-name { font-size: 1.6rem; color: #c0392b; font-weight: bold; margin-bottom: 0.5rem; }
+        .healthy { color: #27ae60 !important; }
+
+        .confidence-bar { background: #eee; border-radius: 20px; height: 10px; margin: 0.5rem 0 1rem; overflow: hidden; }
+        .confidence-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #52b788, #2d6a4f); transition: width 1s; }
+
+        .predictions h4 { font-size: 0.85rem; color: #888; margin-bottom: 0.5rem; }
+        .pred-item { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem; color: #555; }
+
+        .treatment-card {
+            background: white; border-radius: 16px; padding: 2rem;
+            margin-bottom: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .treatment-card h3 { color: #2d6a4f; margin-bottom: 1rem; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .info-box { background: #f0f7f0; border-radius: 10px; padding: 1rem; }
+        .info-box h4 { font-size: 0.8rem; color: #2d6a4f; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+        .info-box p { font-size: 0.875rem; color: #444; line-height: 1.6; }
+
+        .treatment-text { line-height: 1.8; color: #444; white-space: pre-wrap; }
+
+        .severity-badge {
+            display: inline-block; padding: 3px 12px; border-radius: 20px;
+            font-size: 0.78rem; font-weight: 700; margin-bottom: 1rem;
+        }
+        .severity-none { background: #e8f5e9; color: #2d6a4f; }
+        .severity-medium { background: #fff3e0; color: #b45309; }
+        .severity-high { background: #fdf0ef; color: #c0392b; }
+        .severity-unknown { background: #f0f0f0; color: #666; }
+
+        .action-buttons { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .btn { padding: 0.8rem 1.5rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-primary { background: #2d6a4f; color: white; }
+        .btn-secondary { background: #e8f5e9; color: #2d6a4f; }
+        .btn:hover { opacity: 0.85; }
+
+        .share-section { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .share-section h3 { color: #2d6a4f; margin-bottom: 1rem; }
+        input, textarea { width: 100%; padding: 0.7rem 1rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem; margin-bottom: 1rem; }
+        textarea { min-height: 80px; resize: vertical; }
+    </style>
+</head>
+<body>
+    <nav>
+        <strong>🌱 CropHealth AI</strong>
+        <div>
+            <a href="/upload">📷 New Scan</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="result-header">
+            <img src="{{ image_path }}" alt="Scanned crop">
+            <div style="flex: 1;">
+                <p style="color: #888; font-size: 0.85rem; margin-bottom: 0.5rem;">DETECTION RESULT</p>
+                <div class="disease-name {% if 'healthy' in disease_name.lower() %}healthy{% endif %}">
+                    {% if 'not a plant' in disease_name.lower() or 'failed' in disease_name.lower() %}
+                        ❌ {{ disease_name }}
+                    {% elif 'healthy' in disease_name.lower() %}
+                        ✅ {{ disease_name }}
+                    {% else %}
+                        ⚠️ {{ disease_name }}
+                    {% endif %}
+                </div>
+
+                {% if severity %}
+                <div class="severity-badge severity-{{ severity.lower() if severity else 'unknown' }}">
+                    Severity: {{ severity }}
+                </div>
+                {% endif %}
+
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: {{ confidence }}%"></div>
+                </div>
+                <p style="font-size: 0.85rem; color: #666;">{{ confidence }}% confidence</p>
+
+                {% if all_predictions and all_predictions|length > 1 %}
+                <div class="predictions" style="margin-top: 1rem;">
+                    <h4>OTHER POSSIBILITIES</h4>
+                    {% for pred in all_predictions[1:] %}
+                    <div class="pred-item">
+                        <span>{{ pred.name }}</span>
+                        <span>{{ pred.confidence }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="treatment-card">
+            <h3>💊 Treatment Recommendation</h3>
+            {% if severity and severity != 'None' %}
+            <div class="info-grid">
+                <div class="info-box">
+                    <h4>🩺 Treatment</h4>
+                    <p>{{ treatment }}</p>
+                </div>
+                {% if prevention %}
+                <div class="info-box">
+                    <h4>🛡️ Prevention</h4>
+                    <p>{{ prevention }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="treatment-text">{{ treatment }}</div>
+            {% endif %}
+        </div>
+
+        <div class="action-buttons">
+            <a href="/upload" class="btn btn-primary">📷 Scan Another</a>
+            <a href="/dashboard" class="btn btn-secondary">📋 My Scans</a>
+        </div>
+
+        <div class="share-section">
+            <h3>📢 Share with Community</h3>
+            <p style="color: #888; font-size: 0.85rem; margin-bottom: 1rem;">Help other farmers by sharing your discovery</p>
+            <form action="/feed/post" method="POST" enctype="multipart/form-data">
+                <input type="text" name="title" value="Found {{ disease_name }} in my crop" required>
+                <textarea name="content" placeholder="Describe what you observed, your location, crop type...">Detected {{ disease_name }} with {{ confidence }}% confidence using CropHealth AI. Sharing for awareness.</textarea>
+                <input type="hidden" name="disease_tag" value="{{ disease_name }}">
+                <button type="submit" class="btn btn-primary">🌍 Post to Community Feed</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
