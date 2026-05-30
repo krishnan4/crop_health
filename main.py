@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 import shutil
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 from database import init_db, get_db
@@ -886,7 +886,7 @@ async def upload_story(
         with open(image_path, "wb") as f:
             shutil.copyfileobj(image.file, f)
 
-        expires_at = (datetime.utcnow() + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
 
         db = get_db()
         db.execute(
@@ -908,7 +908,7 @@ async def get_stories_api(request: Request):
     current_id = user["id"] if user else 0
 
     db = get_db()
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     stories = db.execute("""
         SELECT s.*, u.name as user_name, u.avatar_path,
